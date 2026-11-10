@@ -117,6 +117,22 @@ describe("state", () => {
     expect(s.coins).toBe(coins + 4); // Lv.6~9 레벨 보상만, 완성 보너스 없음
   });
 
+  it("줄였다가 늘리면 문지른 만큼의 모양으로 돌아간다 (완성 뒤 더 문지른 건 안 셈)", () => {
+    let s = checkIn(defaultSave(), morning, "09:00", "18:00"); // Lv.9
+    const ev: GameEvent[] = [];
+    s = rub(s, 5 * L, ev, at(10));
+    s = editTimes(s, at(10), "09:00", "14:00", ev); // Lv.5 → 바로 완성
+    expect(s.today!.done).toBe(true);
+    expect(s.today!.doneAt).toBeDefined();
+    s = rub(s, 3 * L, ev, at(11)); // 완성 뒤에 더 문질러도
+    expect(s.today!.rub).toBe(5 * L); // 세지 않는다
+    s = editTimes(s, at(11), "09:00", "18:00", ev); // 다시 Lv.9
+    expect(s.today!.done).toBe(false);
+    expect(s.today!.doneAt).toBeUndefined(); // 완성 기록도 지움
+    expect(roundness(s.today!.rub, s.today!.maxLv)).toBeCloseTo(5 / 9);
+    expect(levelOf(s.today!.rub, s.today!.maxLv)).toBe(5);
+  });
+
   it("도장은 퇴근 시간 이후 1회", () => {
     let s = checkIn(defaultSave(), morning, "09:00", "18:00");
     expect(canStamp(s.today, morning)).toBe(false);

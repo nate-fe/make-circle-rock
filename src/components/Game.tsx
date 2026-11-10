@@ -648,7 +648,13 @@ export default function Game() {
           storageOk={storageOk}
           onClose={() => setSheet(null)}
           onSave={({ name, defIn, defOut, color }) => {
-            commit((s) => ({ ...setColor(setName(s, name, "always"), color), defIn, defOut }));
+            commit((s, ev) => {
+              let c = setColor(setName(s, name, "always"), color);
+              // 출근한 날 시간을 바꾸면 오늘 돌(최대 레벨, 타임라인)에도 바로 반영
+              const t = c.today;
+              if (t && !t.off && (t.inT !== defIn || t.outT !== defOut)) c = editTimes(c, new Date(), defIn, defOut, ev);
+              return { ...c, defIn, defOut };
+            });
             setSheet(null);
             toast("저장했어요");
           }}

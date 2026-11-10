@@ -19,8 +19,10 @@ type Props = {
 
 export default function SettingsSheet({ open, save, storageOk, onClose, onSave, onReset }: Props) {
   const [name, setName] = useState(save.name);
-  const [defIn, setIn] = useState(save.defIn);
-  const [defOut, setOut] = useState(save.defOut);
+  // 출근한 날엔 오늘 시간을 보여주고, 바꾸면 오늘 돌에도 바로 적용된다 (Game의 onSave)
+  const working = !!save.today && !save.today.off;
+  const [defIn, setIn] = useState(working ? save.today!.inT : save.defIn);
+  const [defOut, setOut] = useState(working ? save.today!.outT : save.defOut);
   const [color, setColor] = useState(save.color ?? DEFAULT_COLOR);
   const [armed, setArmed] = useState(false);
   const timer = useRef<number | undefined>(undefined);
@@ -54,7 +56,7 @@ export default function SettingsSheet({ open, save, storageOk, onClose, onSave, 
         <ColorPicker value={color} onChange={setColor} />
       </div>
       <div className="form-row">
-        <span>기본 출퇴근</span>
+        <span>출퇴근 시간{working && <small className="form-row__note"> · 오늘부터 적용</small>}</span>
         <div className="form-row__times">
           <input className="field" type="time" value={defIn} onChange={(e) => setIn(e.target.value || defIn)} />
           <span aria-hidden>―</span>

@@ -1,4 +1,4 @@
-import { CHEAT, DEFAULT_NAME, NAME_MAX, RANKS, REWARD, STORAGE_KEY, rankIndexFor } from "./config";
+import { CHEAT, DEFAULT_NAME, NAME_MAX, RANKS, REWARD, RUB_PER_LEVEL, STORAGE_KEY, rankIndexFor } from "./config";
 import { maxLevel, levelOf, roundness } from "./checkin";
 import { addDays, atTime, dateKey, isWeekend } from "./date";
 import { ITEMS, itemById } from "./items";
@@ -117,7 +117,9 @@ function settle(save: SaveData, events: GameEvent[], now: Date): SaveData {
       events.push({ type: "done" });
     }
   } else if (!isDone && r.done) {
+    // 퇴근 시간을 늘려 다시 미완성: 완성 기록도 지운다 (다시 완성하면 그 순간으로 새로 찍힘)
     r.done = false;
+    delete r.doneAt;
   }
   let next: SaveData = { ...save, coins, today: r };
   const doneCount = countDone(next);
@@ -221,7 +223,12 @@ export function editTimes(save: SaveData, now: Date, inT: string, outT: string, 
 export function rub(save: SaveData, count: number, events: GameEvent[], now: Date = new Date()): SaveData {
   const today = save.today;
   if (!today || today.off || count <= 0) return save;
-  return settle({ ...save, today: { ...today, rub: today.rub + count } }, events, now);
+  // 다 동그래진 뒤 더 문지른 건 세지 않는다. 안 그러면 퇴근 시간을 줄였다가 다시 늘렸을 때
+  // 그사이 쌓인 문지름 때문에 늘어난 레벨에서도 동그란 채로 남는다.
+  const full = today.maxLv * RUB_PER_LEVEL;
+  const next = Math.max(today.rub, Math.min(full, today.rub + count));
+  if (next === today.rub) return save;
+  return settle({ ...save, today: { ...today, rub: next } }, events, now);
 }
 
 // ---------- 광고 치트키 ----------

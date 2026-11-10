@@ -1505,6 +1505,11 @@ button:disabled {
   color: var(--ink-3);
 }
 
+.form-row__note {
+  font-size: 12px;
+  color: var(--green);
+}
+
 .form-row__times {
   display: grid;
   grid-template-columns: 1fr auto 1fr;

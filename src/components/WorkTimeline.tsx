@@ -31,7 +31,7 @@ export default function WorkTimeline({ today, now, onEdit }: Props) {
   const t = now.getTime();
   const span = Math.max(1, end - start);
   const frac = Math.max(0, Math.min(1, (t - start) / span));
-  const rec = recordMs(today);
+  const rec = today.done ? recordMs(today) : null; // 퇴근 시간을 늘려 다시 미완성이면 시계도 다시 돈다
   const doneFrac = rec === null ? null : Math.max(0, Math.min(1, rec / span));
 
   // 왼쪽: 출근 기준 (완성하면 멈춘다)
