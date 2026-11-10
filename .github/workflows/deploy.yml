@@ -1,0 +1,47 @@
+# main에 push하면 테스트 → 빌드(out/) → GitHub Pages 배포
+# 처음 한 번: 저장소 Settings → Pages → Source를 "GitHub Actions"로 바꿔야 한다.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # Actions 탭에서 수동 실행도 가능
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포가 겹치면 진행 중인 것은 끝까지 두고 대기 중인 것만 최신으로
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run build # next.config.ts의 output: "export" → out/
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

@@ -16,6 +16,12 @@ npm run build
 - Next.js 16 (App Router, Turbopack) · React 19 · TypeScript 5 · Vitest 5
 - 개발 중에는 주소 끝에 `?offer`를 붙이면 광고 치트키 카드가 바로 뜬다 (Lv.1 이상일 때, 개발 모드에서만).
 
+## 배포 (GitHub Pages)
+
+- `next.config.ts`가 정적 내보내기(`output: "export"`)로 되어 있어서, `npm run build` 하면 `out/` 폴더에 정적 파일만 생긴다.
+- 빌드할 때는 모든 경로 앞에 `/make-circle-rock`이 붙는다 (`basePath`). 주소는 `https://nate-fe.github.io/make-circle-rock/`. 로컬 개발(`npm run dev`)에서는 붙지 않는다.
+- 저장소 이름을 바꾸면 `next.config.ts`의 `repo` 값도 같이 바꾼다.
+
 ## 구조
 
 | 경로 | 역할 |
