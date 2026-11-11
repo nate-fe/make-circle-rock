@@ -64,8 +64,8 @@ button:disabled {
   height: 100dvh;
   margin: 0 auto;
   display: grid;
-  grid-template-rows: auto auto 1fr auto;
-  padding: max(12px, env(safe-area-inset-top)) 16px max(14px, env(safe-area-inset-bottom));
+  grid-template-rows: auto auto 1fr auto auto;
+  padding: max(12px, env(safe-area-inset-top)) 16px max(8px, env(safe-area-inset-bottom));
   overflow: hidden;
 }
 
@@ -102,6 +102,89 @@ button:disabled {
   background: #fbf3dc;
   border: 1.5px solid var(--ink);
   border-radius: 999px;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.coin-chip:active {
+  transform: translateY(1px);
+}
+
+/* 코인 누르면 펼쳐지는 쪽지 */
+.topbar {
+  position: relative;
+}
+
+.coin-tip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  width: min(250px, calc(100vw - 32px));
+  padding: 12px 14px 11px;
+  background: #fff6c8;
+  border: 1.5px solid var(--ink);
+  border-radius: 4px 14px 14px 14px;
+  box-shadow: 3px 4px 0 rgba(43, 40, 36, 0.16);
+  transform: rotate(-1deg);
+  transform-origin: top left;
+  animation: coin-tip-in 0.16s ease-out;
+}
+
+.coin-tip::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: 18px;
+  width: 11px;
+  height: 11px;
+  background: #fff6c8;
+  border-left: 1.5px solid var(--ink);
+  border-top: 1.5px solid var(--ink);
+  transform: rotate(45deg);
+}
+
+.coin-tip__title {
+  margin: 0 0 8px;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 17px;
+}
+
+.coin-tip__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 13px;
+}
+
+.coin-tip__list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px dashed rgba(43, 40, 36, 0.22);
+}
+
+.coin-tip__list b {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--orange);
+  white-space: nowrap;
+}
+
+.coin-tip__foot {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+@keyframes coin-tip-in {
+  from {
+    opacity: 0;
+    transform: rotate(-1deg) translateY(-4px);
+  }
 }
 
 .icon-btn {
@@ -576,6 +659,18 @@ button:disabled {
   grid-template-columns: 1.35fr 1fr 1fr;
   gap: 10px;
   padding-top: 12px;
+}
+
+/* 메인 화면 맨 아래 한 줄 */
+.credit {
+  padding-top: 8px;
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-align: center;
+  color: var(--ink-4);
 }
 
 .act {
@@ -1592,11 +1687,17 @@ button:disabled {
 /* 키 작은 폰(SE 등): 돌을 조금 줄여서 레벨 막대가 아래 버튼에 닿지 않게 */
 @media (max-height: 720px) {
   .rock-pad {
-    width: min(330px, 84vw, 37dvh);
+    width: min(330px, 84vw, 35dvh);
   }
 }
 
 @media (max-height: 640px) {
+  .rock-pad {
+    width: min(330px, 84vw, 31dvh);
+  }
+  .credit {
+    padding-top: 5px;
+  }
   .bubble {
       margin-bottom: 8px;
       font-size: 14px;

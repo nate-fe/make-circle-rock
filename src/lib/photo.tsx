@@ -6,7 +6,7 @@ import type { ReactElement } from "react";
 import RockSvg from "@/components/RockSvg";
 import { roundness } from "./checkin";
 import { dotDate, parseDateKey } from "./date";
-import { stageName } from "./config";
+import { CREDIT, stageName } from "./config";
 import { formatRecord, recordMs, recordPhrase } from "./record";
 import { monthGrid } from "./shelf";
 import type { Rock } from "./types";
@@ -209,7 +209,7 @@ export async function todayPhoto(rock: Rock): Promise<Blob> {
   const ms = rock.done ? recordMs(rock) : null;
   const record = ms === null ? null : ms <= 0 ? "출근 전" : formatRecord(ms);
   const sub = ms !== null ? `${recordPhrase(ms)} 동그랗게 만들었다!` : `오늘 ${rock.rub.toLocaleString()}번 문질렀다`;
-  const foot = `${dotDate(rock.date)}  퇴근돌 키우기`;
+  const foot = `${dotDate(rock.date)}  퇴근돌 키우기 · ${CREDIT}`;
   const lvTag = `Lv.${rock.maxLv}`;
   // 사진 폰트는 쓰는 글자만 받는다 → 기록 딱지 글자도 빠짐없이 넣어야 대체 폰트로 안 그려진다
   await ensureFonts(display, gowun, title + sub + foot + (record ? tagLabel(lvTag) + record : ""));
@@ -255,7 +255,7 @@ export async function shelfPhoto(
   const { canvas, ctx, display, gowun } = await prepareCanvas();
   const title = `${year}년 ${month + 1}월의 돌들`;
   const foot = `완성 ${doneThisMonth}개 · ${rankLabel}`;
-  await ensureFonts(display, gowun, title + foot + "월화수목금토일휴무퇴근돌키우기0123456789");
+  await ensureFonts(display, gowun, title + foot + "월화수목금토일휴무퇴근돌키우기0123456789·" + CREDIT);
 
   ctx.textAlign = "center";
   ctx.fillStyle = INK;
@@ -316,6 +316,6 @@ export async function shelfPhoto(
   ctx.fillText(foot, W / 2, H - 150);
   ctx.font = `bold 37px ${display}`;
   ctx.fillStyle = "#8a8378";
-  ctx.fillText("퇴근돌 키우기", W / 2, H - 80);
+  ctx.fillText(`퇴근돌 키우기 · ${CREDIT}`, W / 2, H - 80);
   return toBlob(canvas);
 }

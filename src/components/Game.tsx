@@ -10,10 +10,11 @@ import PhotoModal from "./PhotoModal";
 import { NameDialog, RenameDialog } from "./Dialogs";
 import { CameraIcon, CoinIcon, GearIcon, HangerIcon, SealIcon, ShelfIcon } from "./Icons";
 import { AdModal, CheatOffer } from "./Cheat";
-import { CHEAT, MAX_RUB_PER_MOVE, RANKS, RUB_DISTANCE, RUB_PER_LEVEL, stageName } from "@/lib/config";
+import { CHEAT, CREDIT, MAX_RUB_PER_MOVE, RANKS, RUB_DISTANCE, RUB_PER_LEVEL, stageName } from "@/lib/config";
 import { levelOf, roundness, rubsToNextLevel } from "@/lib/checkin";
 import { formatRecord, recordMs, recordPhrase } from "@/lib/record";
 import WorkTimeline from "./WorkTimeline";
+import CoinTip from "./CoinTip";
 import { newBucket, takeRubs, type RubBucket } from "@/lib/input";
 import { canStamp, clockInfo } from "@/lib/clock";
 import { dateKey } from "@/lib/date";
@@ -70,6 +71,8 @@ export default function Game() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [stampAnim, setStampAnim] = useState(0);
   const [photo, setPhoto] = useState<Photo | null>(null);
+  const [coinTip, setCoinTip] = useState(false);
+  const closeCoinTip = useCallback(() => setCoinTip(false), []);
   // 광고 치트키
   const [offer, setOffer] = useState(false);
   const [adOpen, setAdOpen] = useState(false);
@@ -431,10 +434,16 @@ export default function Game() {
     <main className="app">
       {/* 상단바 */}
       <header className="topbar">
-        <span className="coin-chip" aria-label="퇴근포인트">
+        <button
+          className="coin-chip"
+          aria-label={`퇴근포인트 ${save.coins}. 모으는 법 보기`}
+          aria-expanded={coinTip}
+          onClick={() => setCoinTip((v) => !v)}
+        >
           <CoinIcon size={18} />
           {save.coins.toLocaleString()}
-        </span>
+        </button>
+        {coinTip && <CoinTip onClose={closeCoinTip} />}
         <div className="topbar__right">
           <button className="icon-btn" onClick={() => setSheet("shelf")} aria-label="진열장">
             <ShelfIcon />
@@ -540,6 +549,7 @@ export default function Game() {
           <span>사진</span>
         </button>
       </nav>
+      <footer className="credit">퇴근돌 키우기 · {CREDIT}</footer>
 
       {offer && !adOpen && (
         <CheatOffer

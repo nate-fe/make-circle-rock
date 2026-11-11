@@ -42,6 +42,7 @@ npm run build
 | `src/lib/logic.test.ts` | 로직 테스트 |
 | `src/components/Game.tsx` | 메인 화면, 문지르기 입력, 토스트, 시트 열고 닫기 |
 | `src/components/WorkTimeline.tsx` | "출근 후 / 퇴근까지" 통합 시계와 진행 바 |
+| `src/components/CoinTip.tsx` | 코인 칩을 누르면 뜨는 "퇴근포인트 모으는 법" 쪽지 |
 | `src/components/Cheat.tsx` | 광고 치트키 제안 카드, 광고 화면 (지금은 가짜 광고) |
 | `src/components/CheckinSheet.tsx` | 매일 출근 체크인 (출퇴근 시간 + 오늘 돌 색) |
 | `src/components/ColorPicker.tsx` | 돌 색 고르기 (기본 8색 + 직접 고르기) |

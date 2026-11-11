@@ -1,9 +1,9 @@
 // 수치 표 (기획서 6.3, 6.8, 6.9)
 
-export const RUB_PER_LEVEL = 400;
+export const RUB_PER_LEVEL = 300;
 export const RUB_DISTANCE = 32; // px 이동마다 1회
 export const MAX_RUB_PER_MOVE = 4;
-/** 아무리 빨리 문질러도 1초에 이만큼만 센다 (Lv.9 = 3,600번 → 최소 5분) */
+/** 아무리 빨리 문질러도 1초에 이만큼만 센다 (Lv.9 = 2,700번 → 최소 3분 45초) */
 export const MAX_RUB_PER_SEC = 12;
 
 /** 광고 치트키: 광고 15초 보면 10초간 문지름 2배 */
@@ -21,6 +21,8 @@ export const MAX_LEVEL_CAP = 16;
 export const NAME_MAX = 6;
 export const DEFAULT_NAME = "돌쇠";
 export const STORAGE_KEY = "toegeun-dol-v3";
+/** 만든 사람. 메인 화면 아래, 사진 맨 아래 줄에 들어간다 */
+export const CREDIT = "@yoonzeen";
 
 export const REWARD = {
   start: 20,
