@@ -55,8 +55,14 @@ npm run build
 
 ## 폰트
 
-제목·숫자는 Gaegu(700), 본문은 Gowun Dodum. 둘 다 SIL Open Font License라 무료로 쓸 수 있다.
-제목 폰트를 바꾸려면 두 곳을 같이 바꾼다: `src/app/layout.tsx`의 `--font-display`, `src/lib/photo.tsx`의 Google Fonts 요청.
+제목·숫자는 Gaegu(700), 본문은 Gowun Dodum. 둘 다 SIL Open Font License라 무료로 쓸 수 있다 (라이선스 원문: `src/app/fonts/*-OFL.txt`).
+
+- 웹폰트 서버를 쓰지 않고 **`src/app/fonts/`의 woff2 파일**을 `next/font/local`로 연결한다 (`src/app/layout.tsx`).
+- 원본(Gaegu 2.9MB, Gowun Dodum 7MB)에서 앱에 필요한 글자만 남겨 줄였다: **Gaegu 220KB, Gowun Dodum 178KB**.
+  - 남긴 글자: 영문·숫자·문장부호, 한글 자모, KS X 1001 완성형 한글 2,350자와 기호, 소스 코드에 쓰인 영문 외 글자 전부.
+  - 2,350자에 없는 드문 글자(예: 똠, 쀍)는 기기 기본 글꼴로 보인다.
+- 사진의 돌 이름은 페이지가 이미 받은 Gaegu 파일을 그대로 SVG에 넣는다 (`src/lib/photo.tsx`). 추가 다운로드 없음.
+- 새 대사·아이템을 넣었는데 글자가 다른 글꼴로 보이면 폰트를 다시 만든다. [fonttools](https://github.com/fonttools/fonttools)의 `pyftsubset`으로 위 글자 범위 + 새 글자를 `--flavor=woff2`로 내보내면 된다. 원본은 [google/fonts](https://github.com/google/fonts)의 `ofl/gaegu/Gaegu-Bold.ttf`, `ofl/gowundodum/GowunDodum-Regular.ttf`.
 
 ## 광고
 

@@ -1,9 +1,23 @@
 import type { Metadata, Viewport } from "next";
-import { Gaegu, Gowun_Dodum } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const display = Gaegu({ weight: "700", subsets: ["latin"], variable: "--font-display", preload: false, display: "swap" });
-const gowun = Gowun_Dodum({ weight: "400", subsets: ["latin"], variable: "--font-gowun", preload: false, display: "swap" });
+// 폰트는 src/app/fonts에 들어 있다 (Google Fonts 원본에서 앱에 쓰는 글자만 남긴 woff2, OFL).
+// 다시 만들려면 README "폰트" 참고.
+const display = localFont({
+  src: "./fonts/Gaegu-Bold.woff2",
+  weight: "700",
+  variable: "--font-display",
+  display: "swap",
+  fallback: ["sans-serif"],
+});
+const gowun = localFont({
+  src: "./fonts/GowunDodum-Regular.woff2",
+  weight: "400",
+  variable: "--font-gowun",
+  display: "swap",
+  fallback: ["sans-serif"],
+});
 
 export const metadata: Metadata = {
   title: "퇴근돌 키우기",

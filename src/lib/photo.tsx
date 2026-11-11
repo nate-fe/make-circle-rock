@@ -48,31 +48,56 @@ async function fetchWithTimeout(url: string, ms: number): Promise<Response> {
   }
 }
 
-/** 이미지로 그린 SVG는 웹폰트를 못 쓰므로, 필요한 글자만 담은 제목 폰트를 base64로 심는다. */
-async function displayFontFace(text: string): Promise<string> {
-  const chars = Array.from(new Set(Array.from(text))).join("");
-  if (!chars.trim()) return "";
-  if (fontCache.has(chars)) return fontCache.get(chars)!;
+/**
+ * 페이지에 이미 걸려 있는 제목 폰트 파일 주소를 찾는다.
+ * next/font/local이 만든 @font-face에서 꺼내므로 basePath(/make-circle-rock)나 파일 해시가 바뀌어도 맞는다.
+ */
+function displayFontUrl(): string | null {
+  const family = fontVar("--font-display", "").split(",")[0].trim().replace(/^['"]|['"]$/g, "");
+  if (!family) return null;
+  for (const sheet of Array.from(document.styleSheets)) {
+    let rules: CSSRuleList;
+    try {
+      rules = sheet.cssRules;
+    } catch {
+      continue; // 다른 출처 스타일시트는 읽을 수 없다
+    }
+    for (const rule of Array.from(rules)) {
+      if (!(rule instanceof CSSFontFaceRule)) continue;
+      const fam = rule.style.getPropertyValue("font-family").trim().replace(/^['"]|['"]$/g, "");
+      if (fam !== family) continue;
+      const src = rule.style.getPropertyValue("src").match(/url\(["']?([^"')]+)["']?\)/)?.[1];
+      if (src) return new URL(src, sheet.href ?? location.href).href;
+    }
+  }
+  return null;
+}
+
+/**
+ * 이미지로 그린 SVG는 페이지 폰트를 못 쓰므로, 제목 폰트(src/app/fonts의 Gaegu)를 base64로 심는다.
+ * 파일은 페이지가 이미 받아 둔 것이라 브라우저 캐시에서 바로 읽힌다. 한 번 만들면 계속 재사용.
+ */
+async function displayFontFace(): Promise<string> {
+  if (fontCache.has("display")) return fontCache.get("display")!;
   try {
-    // 폰트를 못 받으면 기본 글꼴로라도 사진은 만든다
-    const css = await fetchWithTimeout(`https://fonts.googleapis.com/css2?family=Gaegu:wght@700&text=${encodeURIComponent(chars)}`, 4000).then((r) => r.text());
-    const url = css.match(/url\((https:[^)]+)\)/)?.[1];
+    const url = displayFontUrl();
     if (!url) return "";
     const buf = await fetchWithTimeout(url, 4000).then((r) => r.arrayBuffer());
     let bin = "";
     const bytes = new Uint8Array(buf);
     for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    // RockSvg의 글자는 fontFamily="Gaegu"로 되어 있어서 같은 이름으로 선언한다
     const face = `@font-face{font-family:'Gaegu';font-weight:700;src:url(data:font/woff2;base64,${btoa(bin)}) format('woff2');}`;
-    fontCache.set(chars, face);
+    fontCache.set("display", face);
     return face;
   } catch {
-    return "";
+    return ""; // 못 읽어도 기본 글꼴로 사진은 만든다
   }
 }
 
 async function svgImage(svg: string, fontText = ""): Promise<HTMLImageElement> {
   let markup = svg;
-  const face = fontText ? await displayFontFace(fontText) : "";
+  const face = fontText ? await displayFontFace() : "";
   if (face) markup = markup.replace(/<defs>/, `<defs><style>${face}</style>`);
   const blob = new Blob([markup], { type: "image/svg+xml;charset=utf-8" });
   const url = URL.createObjectURL(blob);
