@@ -209,9 +209,9 @@ export async function todayPhoto(rock: Rock): Promise<Blob> {
   const ms = rock.done ? recordMs(rock) : null;
   const record = ms === null ? null : ms <= 0 ? "출근 전" : formatRecord(ms);
   const cheat = (rock.cheats ?? 0) > 0;
-  const sub = ms !== null ? `${recordPhrase(ms)} 동그랗게 만들었다${cheat ? " (치트 사용)" : ""}` : `오늘 ${rock.rub.toLocaleString()}번 문질렀다`;
+  const sub = ms !== null ? `${recordPhrase(ms)} 동그랗게 만들었다!` : `오늘 ${rock.rub.toLocaleString()}번 문질렀다`;
   const foot = `${dotDate(rock.date)}  퇴근돌 키우기`;
-  const lvTag = `Lv.${rock.maxLv}${cheat ? " · 치트" : ""}`;
+  const lvTag = `Lv.${rock.maxLv}`;
   // 사진 폰트는 쓰는 글자만 받는다 → 기록 딱지 글자도 빠짐없이 넣어야 대체 폰트로 안 그려진다
   await ensureFonts(display, gowun, title + sub + foot + (record ? tagLabel(lvTag) + record : ""));
 
