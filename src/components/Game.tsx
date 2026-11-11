@@ -61,7 +61,7 @@ export default function Game() {
   const [storageOk, setStorageOk] = useState(true);
   const [sheet, setSheet] = useState<SheetKind>(null);
   const [fresh, setFresh] = useState<string[]>([]);
-  const [bubble, setBubble] = useState({ text: "", n: 0 });
+  const [bubble, setBubble] = useState<{ text: string; n: number; cheat?: boolean }>({ text: "", n: 0 });
   const bubbleLock = useRef(0);
   const [faceFlash, setFaceFlash] = useState<Face | null>(null);
   const faceTimer = useRef<number | undefined>(undefined);
@@ -116,9 +116,10 @@ export default function Game() {
   }, []);
 
   // ---------- 말풍선 ----------
-  const say = useCallback((text: string, holdMs = 4000) => {
+  /** cheat: 치트키 동안만 보여야 하는 대사 (2배가 끝나면 바로 내린다) */
+  const say = useCallback((text: string, holdMs = 4000, cheat = false) => {
     bubbleLock.current = Date.now() + holdMs;
-    setBubble((b) => ({ text, n: b.n + 1 }));
+    setBubble((b) => ({ text, n: b.n + 1, cheat }));
   }, []);
 
   useEffect(() => {
@@ -348,6 +349,10 @@ export default function Game() {
       if (Date.now() >= boostUntil) {
         window.clearInterval(id);
         setBoostUntil(0);
+        // 2배가 끝나면 "치트키 발동!" 말풍선도 바로 내린다 (다음 20초 대사까지 남아 있지 않게)
+        const s = saveRef.current;
+        bubbleLock.current = 0;
+        setBubble((b) => (b.cheat && s ? { text: ambientLine(s, new Date()), n: b.n + 1 } : b));
       }
     }, 200);
     return () => window.clearInterval(id);
@@ -359,7 +364,7 @@ export default function Game() {
     setBoostUntil(until);
     setAdOpen(false);
     commit((s) => applyCheat(s));
-    say(`치트키 발동! ${CHEAT.boostMs / 1000}초 동안 ${CHEAT.multiplier}배로 깎여요. 빨리요!`, CHEAT.boostMs);
+    say(`치트키 발동! ${CHEAT.boostMs / 1000}초 동안 ${CHEAT.multiplier}배로 깎여요. 빨리요!`, CHEAT.boostMs, true);
     toast(`치트키 · ${CHEAT.boostMs / 1000}초간 ${CHEAT.multiplier}배`, "gold");
   };
 
@@ -402,7 +407,8 @@ export default function Game() {
           ? await mod.todayPhoto(s.today)
           : await mod.shelfPhoto(y!, m!, allRocks(s), doneIn(allRocks(s), y!, m!), rankName(s.rank));
       setPhoto({ blob, loading: false, filename });
-    } catch {
+    } catch (err) {
+      console.error("사진 만들기 실패", err); // 기기별 원인 확인용
       setPhoto(null);
       toast("사진을 만들지 못했어요", "red");
     }
@@ -502,7 +508,7 @@ export default function Game() {
                   {t >= 1 ? (
                     <span className="record is-done">
                       <b>{recordPhrase(recordMs(today!) ?? 0)} 완성</b>
-                      {today!.cheats ? <em className="is-cheat">치트</em> : best !== null && (recordMs(today!) ?? 0) <= best && <em>개인 최고</em>}
+                      {!today!.cheats && best !== null && (recordMs(today!) ?? 0) <= best && <em>개인 최고</em>}
                     </span>
                   ) : (
                     <span>다음 레벨까지 {toNext.toLocaleString()}번</span>

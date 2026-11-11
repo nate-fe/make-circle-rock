@@ -27,16 +27,38 @@ function renderToString(el: ReactElement): string {
 
 const fontCache = new Map<string, string>();
 
+/** 느린 망·인앱 브라우저에서 "현상 중…"에 갇히지 않게: 시간 안에 안 끝나면 포기하고 다음으로 */
+function withTimeout<T>(p: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return new Promise((res) => {
+    const id = setTimeout(() => res(fallback), ms);
+    p.then(
+      (v) => (clearTimeout(id), res(v)),
+      () => (clearTimeout(id), res(fallback)),
+    );
+  });
+}
+
+async function fetchWithTimeout(url: string, ms: number): Promise<Response> {
+  const ctrl = new AbortController();
+  const id = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(url, { signal: ctrl.signal });
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 /** 이미지로 그린 SVG는 웹폰트를 못 쓰므로, 필요한 글자만 담은 제목 폰트를 base64로 심는다. */
 async function displayFontFace(text: string): Promise<string> {
   const chars = Array.from(new Set(Array.from(text))).join("");
   if (!chars.trim()) return "";
   if (fontCache.has(chars)) return fontCache.get(chars)!;
   try {
-    const css = await fetch(`https://fonts.googleapis.com/css2?family=Gaegu:wght@700&text=${encodeURIComponent(chars)}`).then((r) => r.text());
+    // 폰트를 못 받으면 기본 글꼴로라도 사진은 만든다
+    const css = await fetchWithTimeout(`https://fonts.googleapis.com/css2?family=Gaegu:wght@700&text=${encodeURIComponent(chars)}`, 4000).then((r) => r.text());
     const url = css.match(/url\((https:[^)]+)\)/)?.[1];
     if (!url) return "";
-    const buf = await fetch(url).then((r) => r.arrayBuffer());
+    const buf = await fetchWithTimeout(url, 4000).then((r) => r.arrayBuffer());
     let bin = "";
     const bytes = new Uint8Array(buf);
     for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
@@ -55,10 +77,13 @@ async function svgImage(svg: string, fontText = ""): Promise<HTMLImageElement> {
   const blob = new Blob([markup], { type: "image/svg+xml;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   try {
+    // decode()는 사파리에서 SVG를 가끔 거부한다 → onload로 기다린다
     const img = new Image();
-    img.decoding = "async";
-    img.src = url;
-    await img.decode();
+    await new Promise<void>((res, rej) => {
+      img.onload = () => res();
+      img.onerror = () => rej(new Error("svg image load failed"));
+      img.src = url;
+    });
     return img;
   } finally {
     setTimeout(() => URL.revokeObjectURL(url), 2000);
@@ -88,12 +113,12 @@ async function prepareCanvas() {
 }
 
 async function ensureFonts(display: string, gowun: string, text: string) {
-  try {
-    await Promise.all([document.fonts.load(`bold 46px ${display}`, text), document.fonts.load(`40px ${gowun}`, text)]);
-    await document.fonts.ready;
-  } catch {
-    /* 폰트 로드 실패해도 그린다 */
-  }
+  // 폰트 로드가 늦거나 실패해도 3초 뒤엔 그냥 그린다
+  await withTimeout(
+    Promise.all([document.fonts.load(`bold 46px ${display}`, text), document.fonts.load(`40px ${gowun}`, text)]).then(() => document.fonts.ready),
+    3000,
+    undefined,
+  );
 }
 
 function seal(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, display: string) {
@@ -118,13 +143,19 @@ function seal(ctx: CanvasRenderingContext2D, x: number, y: number, r: number, di
   ctx.restore();
 }
 
-/** 배틀용 기록 딱지: 주황 종이에 "완성 기록 / 1분 52.3초" */
+const tagLabel = (lv: string) => `출근 후 완성까지 · ${lv}`;
+
+/** 배틀용 기록 딱지: 주황 종이에 "출근 후 완성까지 · Lv.9 / 3시간 12분" */
 function recordTag(ctx: CanvasRenderingContext2D, x: number, y: number, lv: string, record: string, display: string) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(-0.06);
+  // 위아래 두 줄 중 긴 쪽에 맞춘다 (위 줄이 "· 치트"까지 붙으면 더 길다)
+  ctx.font = `bold 36px ${display}`;
+  const top = ctx.measureText(tagLabel(lv)).width;
   ctx.font = `bold 66px ${display}`;
-  const w = Math.max(340, ctx.measureText(record).width + 70);
+  const bottom = ctx.measureText(record).width;
+  const w = Math.max(340, Math.ceil(Math.max(top, bottom)) + 68);
   const h = 168;
   ctx.fillStyle = "rgba(43,40,36,.18)";
   ctx.fillRect(6, 8, w, h);
@@ -136,7 +167,7 @@ function recordTag(ctx: CanvasRenderingContext2D, x: number, y: number, lv: stri
   ctx.fillStyle = "#fffaf0";
   ctx.textAlign = "left";
   ctx.font = `bold 36px ${display}`;
-  ctx.fillText(`출근 후 완성까지 · ${lv}`, 34, 58);
+  ctx.fillText(tagLabel(lv), 34, 58);
   ctx.font = `bold 66px ${display}`;
   ctx.fillText(record, 34, 132);
   ctx.restore();
@@ -155,7 +186,9 @@ export async function todayPhoto(rock: Rock): Promise<Blob> {
   const cheat = (rock.cheats ?? 0) > 0;
   const sub = ms !== null ? `${recordPhrase(ms)} 동그랗게 만들었다${cheat ? " (치트 사용)" : ""}` : `오늘 ${rock.rub.toLocaleString()}번 문질렀다`;
   const foot = `${dotDate(rock.date)}  퇴근돌 키우기`;
-  await ensureFonts(display, gowun, title + sub + foot + "완성 기록Lv." + (record ?? ""));
+  const lvTag = `Lv.${rock.maxLv}${cheat ? " · 치트" : ""}`;
+  // 사진 폰트는 쓰는 글자만 받는다 → 기록 딱지 글자도 빠짐없이 넣어야 대체 폰트로 안 그려진다
+  await ensureFonts(display, gowun, title + sub + foot + (record ? tagLabel(lvTag) + record : ""));
 
   const svg = renderToString(<RockSvg seed={rock.date} t={t} name={rock.name} wear={rock.wear} color={rock.color} face={t >= 1 ? "done" : "idle"} ghost />);
   const img = await svgImage(svg, rock.name + "상무 " + rock.name);
@@ -164,7 +197,7 @@ export async function todayPhoto(rock: Rock): Promise<Blob> {
   ctx.drawImage(img, (W - iw) / 2, 90, iw, ih);
 
   if (rock.stamp) seal(ctx, W - 210, 210, 92, display);
-  if (record) recordTag(ctx, 70, 70, `Lv.${rock.maxLv}${cheat ? " · 치트" : ""}`, record, display);
+  if (record) recordTag(ctx, 70, 70, lvTag, record, display);
 
   ctx.fillStyle = INK;
   ctx.textAlign = "center";
